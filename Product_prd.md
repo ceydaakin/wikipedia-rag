@@ -15,24 +15,23 @@ The product exists because:
 - It demonstrates the full retrieval-augmented generation (RAG) pipeline:
   ingest → chunk → embed → store → retrieve → generate.
 - It must work offline (after one-time Wikipedia fetch + model pull).
-- It is a course deliverable for BLG483E HW3.
 
 ## 2. Users & Use Cases
 
 | User                    | Need                                                           |
 |-------------------------|----------------------------------------------------------------|
-| Course instructor       | Run the project from `README.md` instructions only.            |
+| New user / reviewer     | Run the project from `README.md` instructions only.            |
 | Curious end-user        | Ask factual questions about famous people / places.            |
 | Developer (us)          | Inspect retrieved chunks, swap models, reset state cleanly.    |
 
-The instructor is the most demanding user: the project **must** be runnable
+A new user is the most demanding case: the project **must** be runnable
 following only README instructions, with no extra guidance.
 
 ## 3. Functional Requirements
 
 ### FR-1 Ingest
 - The system ingests at least 20 famous people and 20 famous places from
-  Wikipedia (the brief lists 10 of each as the required minimum set).
+  Wikipedia.
 - Required entities: Albert Einstein, Marie Curie, Leonardo da Vinci,
   William Shakespeare, Ada Lovelace, Nikola Tesla, Lionel Messi,
   Cristiano Ronaldo, Taylor Swift, Frida Kahlo, Eiffel Tower,
@@ -155,8 +154,8 @@ The build is "done" when **all** of the following are true:
   unified.
 - **Section-aware sliding window** with `chunk_size=600`, `overlap=100`.
 - **Classifier is rule-based.** Keyword + entity-name match. No ML
-  classifier or LLM-based router. This is per the brief's guidance and
-  keeps latency low.
+  classifier or LLM-based router. Keeps latency low and the
+  decision path easy to debug.
 - **`llama3.2:3b` as default LLM.** Chosen for speed/quality on consumer
   hardware. `phi3` and `mistral` work as drop-in replacements via
   `config.py`.

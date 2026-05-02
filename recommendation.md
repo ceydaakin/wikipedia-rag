@@ -1,12 +1,12 @@
 # Production Deployment Recommendations
 
-The homework version runs entirely on one laptop. Below is what I would
+The current local version runs entirely on one laptop. Below is what I would
 change to take it to a real product, organized by concern. Each section
 calls out the **why**, the **change**, and the **tradeoff**.
 
 ## 1. Hosting & Inference
 
-| Concern              | Homework                       | Production                                                                         |
+| Concern              | Local version                  | Production                                                                         |
 |----------------------|--------------------------------|------------------------------------------------------------------------------------|
 | LLM runtime          | Ollama on the dev box          | vLLM / TGI on a GPU pool (A10/A100), or managed Bedrock / Vertex if "fully local" relaxes |
 | Embedding runtime    | Ollama (CPU)                   | Same model on a dedicated embedder pod (batch + GPU) — embeddings dominate ingest cost |
@@ -42,7 +42,7 @@ inference backend without touching retrieval code.
 
 ## 4. Retrieval Quality
 
-The homework uses a rule-based classifier and pure vector search. For
+The current version uses a rule-based classifier and pure vector search. For
 production, layer on:
 
 1. **Hybrid search** — combine BM25 keyword scores with dense scores
@@ -147,7 +147,7 @@ production, layer on:
 
 ## Summary
 
-The homework architecture is the right shape — what changes for production
+The local architecture is the right shape — what changes for production
 is **scale, eval, and operational rigor**, not the core RAG flow. The two
 biggest immediate wins on the path to production are:
 

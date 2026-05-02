@@ -1,4 +1,4 @@
-# Local Wikipedia RAG Assistant — BLG483E HW3
+# Local Wikipedia RAG Assistant
 
 A fully-local ChatGPT-style assistant that answers questions about 20 famous
 people and 20 famous places using a retrieval-augmented generation (RAG)
@@ -101,7 +101,7 @@ python scripts/reset.py     # wipes vector store + SQLite, keeps cached pages
 
 ## Example queries
 
-The system is tested against the queries from the project brief:
+Example queries the system handles:
 
 **People**
 - *Who was Albert Einstein and what is he known for?*
@@ -191,13 +191,8 @@ Once Ollama is running and ingestion is complete:
 python scripts/smoke_test.py
 ```
 
-Runs all 14 example queries from the brief (people / places / mixed /
-comparison / failure cases) and prints answers with retrieval debug
-info. Use this before recording the demo video.
-
-## Demo video
-
-[YouTube / Loom link goes here once recorded]
+Runs all 14 example queries (people / places / mixed / comparison /
+failure cases) and prints answers with retrieval debug info.
 
 ## Notes & limitations
 
@@ -206,5 +201,5 @@ info. Use this before recording the demo video.
   Silicon for `llama3.2:3b`).
 - The Wikipedia-API library is the only place we don't roll our own; it
   handles MediaWiki content extraction and section parsing in a way that
-  isn't worth re-implementing for a homework project.
+  isn't worth re-implementing at this scope.
 - See `recommendation.md` for what would change to make this production-ready.

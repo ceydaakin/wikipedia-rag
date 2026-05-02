@@ -1,7 +1,7 @@
-"""Run the brief's example queries end-to-end and print answers + retrieval info.
+"""Run the example queries end-to-end and print answers + retrieval info.
 
-Used to verify the full pipeline before recording the demo. Not part of the
-regular test suite (requires Ollama running).
+Used to verify the full pipeline. Not part of the regular test suite
+(requires Ollama running).
 """
 
 from __future__ import annotations

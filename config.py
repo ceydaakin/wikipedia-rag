@@ -27,7 +27,7 @@ COMPARISON_TOP_K_PER_ENTITY = 4
 LLM_TEMPERATURE = 0.1
 LLM_MAX_TOKENS = 512
 
-WIKIPEDIA_USER_AGENT = "BLG483E-HW3-RAG/1.0 (educational; contact ceyda.akin@sentez.co)"
+WIKIPEDIA_USER_AGENT = "Wikipedia-RAG/1.0 (educational; contact ceyda.akin@sentez.co)"
 WIKIPEDIA_LANGUAGE = "en"
 
 for d in (DATA_DIR, RAW_DIR, PROCESSED_DIR, CHROMA_DIR):

@@ -1,4 +1,4 @@
-# BLG483E HW3 — Local Wikipedia RAG Assistant: Implementation Plan
+# Local Wikipedia RAG Assistant — Implementation Plan
 
 ## 1. Goal Recap
 
@@ -134,7 +134,7 @@ Additional: Stonehenge, Petra, Acropolis of Athens, Sydney Opera House, Big Ben,
   - Expander showing retrieved chunks with similarity scores
   - "Reset" button (clear chat, optionally rebuild index)
   - Sidebar: model selector, top-k slider, show-context toggle
-- [ ] `src/ui/cli.py` — CLI fallback for instructors who don't want to install Streamlit
+- [ ] `src/ui/cli.py` — CLI fallback for environments without Streamlit
   - `python -m src.ui.cli`
   - Commands: `:reset`, `:context on/off`, `:quit`
 
@@ -166,7 +166,7 @@ Additional: Stonehenge, Petra, Acropolis of Athens, Sydney Opera House, Big Ben,
 
 | Layer        | Choice                              | Why                                                |
 |--------------|-------------------------------------|----------------------------------------------------|
-| Language     | Python 3.11+                        | Native ML ecosystem, instructor-friendly           |
+| Language     | Python 3.11+                        | Native ML ecosystem, broad familiarity             |
 | LLM          | Ollama + `llama3.2:3b`              | Fast on consumer hardware, good reasoning          |
 | Embeddings   | Ollama + `nomic-embed-text`         | 768-dim, runs locally, same Ollama runtime         |
 | Vector DB    | Chroma (persistent, file-backed)    | Zero-config, metadata filtering, SQLite under hood |
@@ -183,7 +183,7 @@ Additional: Stonehenge, Petra, Acropolis of Athens, Sydney Opera House, Big Ben,
 
 | Risk                                  | Mitigation                                              |
 |---------------------------------------|---------------------------------------------------------|
-| Ollama not installed on grader's box  | Bold instructions in README, `make setup` script        |
+| Ollama not installed on target machine| Bold instructions in README, `make setup` script        |
 | Wikipedia API rate limits             | Cache raw HTML/text on first fetch, ship cached data    |
 | Embedding model download time         | README warns; `scripts/setup.sh` pulls models upfront   |
 | Hallucination on adversarial queries  | Strict prompt + low temperature (0.1) + "I don't know"  |
@@ -195,7 +195,7 @@ Additional: Stonehenge, Petra, Acropolis of Athens, Sydney Opera House, Big Ben,
 ## 7. File Tree (target)
 
 ```
-blg483e-hw3-wikipedia-rag/
+wikipedia-rag/
 ├── README.md                       # install + run + examples
 ├── Product_prd.md                  # PRD for AI to rebuild this
 ├── recommendation.md               # production deployment notes
