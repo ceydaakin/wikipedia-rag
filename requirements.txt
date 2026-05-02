@@ -1,3 +1,4 @@
 wikipedia-api==0.6.0
 chromadb==0.4.24
 streamlit==1.32.0
+pytest==8.0.2
