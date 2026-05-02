@@ -15,7 +15,7 @@ CHROMA_COLLECTION = "wikipedia_rag"
 
 OLLAMA_HOST = "http://localhost:11434"
 EMBED_MODEL = "nomic-embed-text"
-LLM_MODEL = "llama3.2:latest"
+LLM_MODEL = "llama3.2:3b"
 
 CHUNK_SIZE = 600
 CHUNK_OVERLAP = 100
