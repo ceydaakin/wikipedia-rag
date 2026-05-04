@@ -28,6 +28,15 @@ QUERY_EXPANSION_ENABLED = True
 LLM_TEMPERATURE = 0.1
 LLM_MAX_TOKENS = 512
 
+# Models the UI lets you choose from. Each must be `ollama pull`'ed before use.
+MODEL_OPTIONS = ["llama3.2:3b", "phi3", "mistral"]
+
+# Multi-turn memory: last N user/assistant pairs threaded into the prompt.
+MAX_HISTORY_TURNS = 3
+
+# In-memory response cache (LRU) — query+top_k+model+history is the key.
+RESPONSE_CACHE_SIZE = 64
+
 WIKIPEDIA_USER_AGENT = "Wikipedia-RAG/1.0 (educational; contact ceyda.akin@sentez.co)"
 WIKIPEDIA_LANGUAGE = "en"
 

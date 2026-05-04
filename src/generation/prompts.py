@@ -37,10 +37,37 @@ def _format_context(chunks: Sequence[StoredChunk]) -> str:
     return "\n\n".join(lines)
 
 
-def build_prompt(query: str, chunks: Sequence[StoredChunk]) -> str:
-    """Build the full user prompt that will be sent to Ollama."""
+def _format_history(history: Sequence[tuple[str, str]]) -> str:
+    """Format prior turns as a short transcript so follow-ups can resolve
+    pronouns and anaphora ("compare them", "what about her wife")."""
+    if not history:
+        return ""
+    lines: list[str] = ["Previous conversation (most recent last):"]
+    for user_msg, assistant_msg in history:
+        u = user_msg.strip()
+        a = assistant_msg.strip()
+        if u:
+            lines.append(f"User: {u}")
+        if a:
+            lines.append(f"Assistant: {a}")
+    return "\n".join(lines) + "\n\n"
+
+
+def build_prompt(
+    query: str,
+    chunks: Sequence[StoredChunk],
+    history: Sequence[tuple[str, str]] | None = None,
+) -> str:
+    """Build the full user prompt that will be sent to Ollama.
+
+    history is an optional list of (user, assistant) pairs from earlier
+    turns of the same chat session. Threading these in lets the model
+    resolve references like "compare them" against the prior context.
+    """
+    history_block = _format_history(history or [])
     return (
         f"{SYSTEM_PROMPT}\n\n"
+        f"{history_block}"
         f"Context:\n{_format_context(chunks)}\n\n"
         f"Question: {query}\n"
         f"Answer:"

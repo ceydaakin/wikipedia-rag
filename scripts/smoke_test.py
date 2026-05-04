@@ -48,7 +48,12 @@ def main() -> None:
         print(f"  retrieved {len(result.retrieval.chunks)} chunks "
               f"(top distance {result.retrieval.chunks[0].distance:.3f})"
               if result.retrieval.chunks else "  retrieved 0 chunks")
-        print(f"  answer ({elapsed:.1f}s): {result.text}")
+        cache_tag = " [cached]" if result.cached else ""
+        print(
+            f"  timing: retrieve {result.retrieve_seconds*1000:.0f}ms · "
+            f"generate {result.generate_seconds:.2f}s · total {elapsed:.1f}s{cache_tag}"
+        )
+        print(f"  answer: {result.text}")
         print()
 
 
