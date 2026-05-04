@@ -79,7 +79,7 @@ def answer_question(
         )
 
     t0 = perf_counter()
-    retrieval = retrieve(query, top_k=top_k)
+    retrieval = retrieve(query, top_k=top_k, history=history)
     t_retrieve = perf_counter() - t0
 
     if not retrieval.chunks:
@@ -131,7 +131,7 @@ def stream_answer(
         return session, _replay()
 
     t0 = perf_counter()
-    retrieval = retrieve(query, top_k=top_k)
+    retrieval = retrieve(query, top_k=top_k, history=history)
     t_retrieve = perf_counter() - t0
 
     session = StreamSession(

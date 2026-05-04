@@ -12,7 +12,7 @@ queries like "Which famous place is located in Turkey?".
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Sequence
 
 from config import (
     COMPARISON_TOP_K_PER_ENTITY,
@@ -21,6 +21,7 @@ from config import (
 )
 from src.embeddings.embedder import embed_text
 from src.retrieval.classifier import QueryAnalysis, classify
+from src.retrieval.contextualizer import contextualize_query
 from src.retrieval.query_expander import expand_query
 from src.store import vector_store
 from src.store.vector_store import StoredChunk
@@ -31,6 +32,7 @@ class RetrievalResult:
     analysis: QueryAnalysis
     chunks: list[StoredChunk]
     expanded_query: str
+    resolved_query: str = ""  # original if no contextualization happened
 
 
 def _filter_for_type(query_type: str) -> Optional[dict]:
@@ -55,18 +57,34 @@ def _classify_with_expansion(query: str, expanded: str) -> QueryAnalysis:
     return analysis
 
 
-def retrieve(query: str, top_k: int = DEFAULT_TOP_K) -> RetrievalResult:
+def retrieve(
+    query: str,
+    top_k: int = DEFAULT_TOP_K,
+    history: Optional[Sequence[tuple[str, str]]] = None,
+) -> RetrievalResult:
     """Retrieve relevant chunks for a query.
 
     Strategy:
-    - Optionally expand the query with the LLM for better recall.
+    - When `history` is provided, rewrite follow-ups like "tell me more
+      about her" into standalone queries before doing anything else, so
+      the classifier and embedder have a real subject to work with.
+    - Optionally expand the resolved query with the LLM for better recall.
     - If 2+ specific entities are mentioned (comparison), retrieve
       COMPARISON_TOP_K_PER_ENTITY chunks per named entity.
     - Otherwise, retrieve top_k chunks filtered by entity_type when known.
     """
-    expanded = expand_query(query) if QUERY_EXPANSION_ENABLED else query
-    analysis = _classify_with_expansion(query, expanded)
+    resolved = contextualize_query(query, history) if history else query
+    expanded = expand_query(resolved) if QUERY_EXPANSION_ENABLED else resolved
+    analysis = _classify_with_expansion(resolved, expanded)
     embedding = embed_text(expanded)
+
+    def _result(chunks: list[StoredChunk]) -> RetrievalResult:
+        return RetrievalResult(
+            analysis=analysis,
+            chunks=chunks,
+            expanded_query=expanded,
+            resolved_query=resolved,
+        )
 
     # Comparison: pull a small batch per named entity so both sides are covered.
     if analysis.is_comparison and len(analysis.matched_entities) >= 2:
@@ -83,7 +101,7 @@ def retrieve(query: str, top_k: int = DEFAULT_TOP_K) -> RetrievalResult:
                     seen.add(chunk.id)
                     bag.append(chunk)
         bag.sort(key=lambda c: c.distance)
-        return RetrievalResult(analysis=analysis, chunks=bag, expanded_query=expanded)
+        return _result(bag)
 
     # Single named entity: restrict search to that entity's chunks.
     if len(analysis.matched_entities) == 1:
@@ -93,7 +111,7 @@ def retrieve(query: str, top_k: int = DEFAULT_TOP_K) -> RetrievalResult:
             top_k=top_k,
             where={"entity_title": entity["title"]},
         )
-        return RetrievalResult(analysis=analysis, chunks=chunks, expanded_query=expanded)
+        return _result(chunks)
 
     # Multiple named entities but no comparison keyword: union them.
     if len(analysis.matched_entities) > 1:
@@ -103,9 +121,9 @@ def retrieve(query: str, top_k: int = DEFAULT_TOP_K) -> RetrievalResult:
             top_k=top_k,
             where={"entity_title": {"$in": titles}},
         )
-        return RetrievalResult(analysis=analysis, chunks=chunks, expanded_query=expanded)
+        return _result(chunks)
 
     # No specific entity matched: fall back to type-level filter.
     where = _filter_for_type(analysis.query_type)
     chunks = vector_store.query(embedding=embedding, top_k=top_k, where=where)
-    return RetrievalResult(analysis=analysis, chunks=chunks, expanded_query=expanded)
+    return _result(chunks)

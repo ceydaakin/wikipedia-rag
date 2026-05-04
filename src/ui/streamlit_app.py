@@ -271,10 +271,17 @@ section[data-testid="stSidebar"] .stButton > button {
 }
 
 /* ─── Input bar (ChatGPT-style pill) ─── */
+/* Dock the input to the bottom of the chat column. `sticky` (vs `fixed`)
+   keeps it inside the centered .block-container so it lines up with the
+   message column on every viewport AND avoids the "fixed inside a
+   transformed ancestor" gotcha that pinned it to the wrong x in 1.32. */
 [data-testid="stChatInput"] {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 99 !important;
     background: var(--bg) !important;
-    padding-top: 16px !important;
-    padding-bottom: 24px !important;
+    padding: 16px 0 24px 0 !important;
+    margin-top: auto !important;
 }
 [data-testid="stChatInput"] > div {
     position: relative !important;
@@ -404,6 +411,16 @@ def render_expanded(query: str, expanded: str) -> None:
     )
 
 
+def render_resolved(original: str, resolved: str) -> None:
+    """Show the rewritten standalone query when contextualization fired."""
+    if not resolved or resolved.strip().lower() == original.strip().lower():
+        return
+    st.markdown(
+        f'<div class="callout"><div class="label">Resolved follow-up</div>{_safe(resolved)}</div>',
+        unsafe_allow_html=True,
+    )
+
+
 def render_sources(items) -> None:
     for i, c in enumerate(items, 1):
         section = c.get("section") or "—"
@@ -513,21 +530,12 @@ EXAMPLES = [
     ("Which famous place is located in Turkey?", "Reasoning"),
 ]
 
-if not st.session_state.messages:
-    st.markdown(
-        """
-        <div class="welcome-wrap">
-          <h1>How can I help?</h1>
-          <p>Ask about 20 famous people and 20 famous places — fully local.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    cols = st.columns(2)
-    for i, (text, label) in enumerate(EXAMPLES):
-        if cols[i % 2].button(text, key=f"ex_{i}", use_container_width=True):
-            st.session_state.pending_query = text
-            st.rerun()
+# Reserve a slot at the top of the page for the welcome screen. We fill it
+# below ONLY if there's no chat history AND no prompt about to be processed.
+# This avoids the "welcome stays visible above the first answer" glitch that
+# happens when the welcome is rendered before chat_input has yielded its
+# value on the same script run.
+welcome_holder = st.empty()
 
 
 # ─── Chat history rendering ───────────────────────────────────────────────────
@@ -541,8 +549,13 @@ for message in st.session_state.messages:
             and message.get("context")
         ):
             with st.expander(f"Sources · {len(message['context'])}"):
+                if message.get("resolved_query"):
+                    render_resolved(message.get("query", ""), message["resolved_query"])
                 if message.get("expanded_query"):
-                    render_expanded(message.get("query", ""), message["expanded_query"])
+                    render_expanded(
+                        message.get("resolved_query") or message.get("query", ""),
+                        message["expanded_query"],
+                    )
                 render_sources(message["context"])
 
 
@@ -552,6 +565,23 @@ prompt = st.chat_input("Message Wikipedia RAG…")
 if not prompt and st.session_state.pending_query:
     prompt = st.session_state.pending_query
     st.session_state.pending_query = None
+
+if not st.session_state.messages and not prompt:
+    with welcome_holder.container():
+        st.markdown(
+            """
+            <div class="welcome-wrap">
+              <h1>How can I help?</h1>
+              <p>Ask about 20 famous people and 20 famous places — fully local.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        cols = st.columns(2)
+        for i, (text, _label) in enumerate(EXAMPLES):
+            if cols[i % 2].button(text, key=f"ex_{i}", use_container_width=True):
+                st.session_state.pending_query = text
+                st.rerun()
 
 
 def _consume_stream(session, stream, placeholder) -> str:
@@ -581,6 +611,7 @@ def _persist_assistant_turn(query: str, session, final_text: str) -> None:
                 }
                 for c in session.retrieval.chunks
             ],
+            "resolved_query": session.retrieval.resolved_query,
         }
     )
 
@@ -597,13 +628,17 @@ if prompt:
         st.markdown(prompt)
 
     if compare_models and model_b:
-        retrieval = do_retrieve(prompt, top_k=top_k)
+        retrieval = do_retrieve(prompt, top_k=top_k, history=history)
 
         with st.chat_message("assistant", avatar="🧭"):
             render_meta_row(retrieval)
             if show_context:
                 with st.expander(f"Sources · {len(retrieval.chunks)}"):
-                    render_expanded(prompt, retrieval.expanded_query)
+                    render_resolved(prompt, retrieval.resolved_query)
+                    render_expanded(
+                        retrieval.resolved_query or prompt,
+                        retrieval.expanded_query,
+                    )
                     render_sources([
                         {
                             "entity_title": c.metadata.get("entity_title", "?"),
@@ -665,7 +700,11 @@ if prompt:
 
             if show_context:
                 with st.expander(f"Sources · {len(session.retrieval.chunks)}"):
-                    render_expanded(prompt, session.retrieval.expanded_query)
+                    render_resolved(prompt, session.retrieval.resolved_query)
+                    render_expanded(
+                        session.retrieval.resolved_query or prompt,
+                        session.retrieval.expanded_query,
+                    )
                     render_sources([
                         {
                             "entity_title": c.metadata.get("entity_title", "?"),
