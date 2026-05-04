@@ -50,7 +50,7 @@ Then open <http://localhost:8501> in your browser and ask questions like
 
 | Layer        | Choice                                    |
 |--------------|-------------------------------------------|
-| Language     | Python 3.11+                              |
+| Language     | Python 3.11, 3.12, or 3.13                |
 | LLM          | Ollama · `llama3.2:3b` (default)          |
 | Embeddings   | Ollama · `nomic-embed-text` (768-dim)     |
 | Vector store | Chroma (persistent, file-backed)          |
@@ -62,7 +62,10 @@ written in plain Python — no LangChain.
 
 ## Prerequisites
 
-1. **Python 3.11+** (`python3 --version`)
+1. **Python 3.11, 3.12, or 3.13** (`python3 --version`)
+   - **Python 3.14 is not supported** — `chromadb` pulls in `protobuf` which
+     hasn't shipped a 3.14-compatible C extension yet. On macOS:
+     `brew install python@3.13`.
 2. **Ollama** — install from <https://ollama.com>
    - Confirm with `ollama --version`
    - Make sure the daemon is running (`ollama serve` in a separate terminal,
@@ -141,6 +144,9 @@ python scripts/reset.py     # wipes vector store + SQLite, keeps cached pages
   memory. Subsequent answers are 2–6 s on Apple Silicon.
 - **`ModuleNotFoundError`** — make sure the venv is active:
   `source .venv/bin/activate`.
+- **`TypeError: Metaclasses with custom tp_new are not supported`** during
+  `import chromadb` — your venv is on Python 3.14. Recreate it with 3.13:
+  `rm -rf .venv && PYTHON=python3.13 bash scripts/setup.sh`.
 
 ## Example queries
 
