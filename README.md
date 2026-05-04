@@ -5,6 +5,47 @@ people and 20 famous places using a retrieval-augmented generation (RAG)
 pipeline. **No external LLM API is used.** Embeddings, the vector store, and
 the language model all run on your machine.
 
+## How it works
+
+```
+Wikipedia ──► scripts/ingest.py ──► chunks ──► embeddings ──► Chroma
+                                                                  │
+   user query ──► expand ──► classify ──► search ◄────────────────┘
+                                            │
+                                            ▼
+                                    Ollama LLM (streamed)
+                                            │
+                                            ▼
+                            Streamlit chat UI / CLI
+```
+
+## Quick start
+
+Four commands, in order, from a fresh clone. Everything else in this README
+is just detail on these steps.
+
+```bash
+# 1. Clone and enter the project
+git clone <your-repo-url> wikipedia-rag && cd wikipedia-rag
+
+# 2. One-shot setup: venv + Python deps + pulls both Ollama models
+bash scripts/setup.sh
+
+# 3. Ingest the 40 Wikipedia pages and build the vector store (~5–10 min, one time)
+source .venv/bin/activate
+python scripts/ingest.py
+
+# 4. Launch the chat UI
+streamlit run src/ui/streamlit_app.py
+```
+
+Then open <http://localhost:8501> in your browser and ask questions like
+*"Compare Einstein and Tesla"* or *"Where is the Eiffel Tower?"*.
+
+> **Before you run anything, make sure Ollama is running** — install it from
+> <https://ollama.com>, then either start the desktop app (macOS) or run
+> `ollama serve` in a separate terminal.
+
 ## Stack
 
 | Layer        | Choice                                    |
@@ -27,19 +68,9 @@ written in plain Python — no LangChain.
    - Make sure the daemon is running (`ollama serve` in a separate terminal,
      or just launch the desktop app on macOS).
 
-## Setup
+## Step 1 — Setup (one time)
 
-```bash
-# from the project root
-bash scripts/setup.sh
-```
-
-That script will:
-1. Create a `.venv` virtualenv
-2. Install Python deps from `requirements.txt`
-3. Pull the two required Ollama models (`llama3.2:3b`, `nomic-embed-text`)
-
-If you'd rather do it manually:
+The Quick Start uses `scripts/setup.sh`. If you'd rather do it by hand:
 
 ```bash
 python3 -m venv .venv
@@ -49,7 +80,7 @@ ollama pull llama3.2:3b
 ollama pull nomic-embed-text
 ```
 
-## Ingest the Wikipedia data
+## Step 2 — Ingest the Wikipedia data (one time)
 
 ```bash
 source .venv/bin/activate
@@ -71,7 +102,7 @@ python scripts/ingest.py --refresh                  # re-fetch from Wikipedia
 python scripts/ingest.py --only "Albert Einstein"   # ingest a single entity
 ```
 
-## Run the chat UI
+## Step 3 — Run the chat UI
 
 ### Streamlit (recommended)
 
@@ -98,6 +129,18 @@ In-CLI commands:
 ```bash
 python scripts/reset.py     # wipes vector store + SQLite, keeps cached pages
 ```
+
+## Troubleshooting
+
+- **`Failed to reach Ollama at http://localhost:11434`** — Ollama isn't
+  running. Open the Ollama desktop app or run `ollama serve` in another
+  terminal, then retry.
+- **Streamlit says "Vector store is empty"** — you skipped Step 2. Run
+  `python scripts/ingest.py` first.
+- **First answer is slow (10–20 s)** — Ollama is loading the model into
+  memory. Subsequent answers are 2–6 s on Apple Silicon.
+- **`ModuleNotFoundError`** — make sure the venv is active:
+  `source .venv/bin/activate`.
 
 ## Example queries
 
@@ -129,15 +172,28 @@ Example queries the system handles:
 
 ## How retrieval works
 
-1. **Classify** — a rule-based router looks for known entity titles, last-name
+1. **Expand** — the query is sent to the local LLM with a tight prompt that
+   asks for related entity names, locations, and Wikipedia-style keywords.
+   The keywords are appended to the original query before embedding, which
+   surfaces chunks that share concepts but not surface words (e.g. *"Which
+   famous place is in Turkey?"* → adds `Hagia Sophia Istanbul`). Toggled by
+   `QUERY_EXPANSION_ENABLED` in `config.py`. Fail-open: if the LLM is offline
+   the original query is used unchanged.
+2. **Classify** — a rule-based router looks for known entity titles, last-name
    mentions, and person/place keyword hints to decide whether the query is
-   about a `person`, a `place`, or `both`.
-2. **Filter + search** — the query is embedded, then Chroma is searched with a
-   metadata filter that matches the routing decision.
-3. **Comparison shortcut** — when 2+ specific entities are mentioned with a
+   about a `person`, a `place`, or `both`. Runs on the original query first
+   and falls back to the expanded text if no entities matched, so expansion
+   can also rescue routing.
+3. **Filter + search** — the expanded query is embedded, then Chroma is
+   searched with a metadata filter that matches the routing decision.
+4. **Comparison shortcut** — when 2+ specific entities are mentioned with a
    comparison keyword (`compare`, `vs`, `versus`), each entity gets its own
    small batch of chunks, then the merged set is sorted by similarity. This
    guarantees both sides are represented in context.
+
+Generation is **streamed token-by-token** through `src/generation/llm.py`
+(`generate_stream`) and rendered live in both the Streamlit UI and the CLI,
+so answers start appearing immediately instead of after the full completion.
 
 The full prompt instructs the LLM to use only the retrieved context and to
 say `I don't know.` when it can't find an answer there.
@@ -180,8 +236,8 @@ say `I don't know.` when it can't find an answer there.
 python -m pytest tests/ -v
 ```
 
-Tests cover the cleaner, chunker, and query classifier without requiring
-Ollama or network access. **15 tests, all passing.**
+Tests cover the cleaner, chunker, query classifier, and query expander
+without requiring Ollama or network access. **20 tests, all passing.**
 
 ### End-to-end smoke test
 
