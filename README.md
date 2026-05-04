@@ -5,6 +5,8 @@ people and 20 famous places using a retrieval-augmented generation (RAG)
 pipeline. **No external LLM API is used.** Embeddings, the vector store, and
 the language model all run on your machine.
 
+**Demo video:** <https://youtu.be/N9cXYKdSHME>
+
 ## How it works
 
 ```
