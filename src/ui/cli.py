@@ -21,6 +21,8 @@ def _print_context(result) -> None:
     if result.analysis.matched_entities:
         names = ", ".join(e["title"] for e in result.analysis.matched_entities)
         print(f"matched entities: {names}")
+    if getattr(result, "expanded_query", None):
+        print(f"expanded query: {result.expanded_query[:160]}")
     for i, chunk in enumerate(result.chunks, 1):
         title = chunk.metadata.get("entity_title", "?")
         section = chunk.metadata.get("section", "")

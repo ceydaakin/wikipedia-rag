@@ -73,6 +73,8 @@ if prompt:
                 f"(query type: {retrieval.analysis.query_type}, "
                 f"comparison: {retrieval.analysis.is_comparison})"
             ):
+                if retrieval.expanded_query and retrieval.expanded_query != prompt:
+                    st.caption(f"**Expanded query:** {retrieval.expanded_query}")
                 for i, chunk in enumerate(retrieval.chunks, 1):
                     title = chunk.metadata.get("entity_title", "?")
                     section = chunk.metadata.get("section", "")
