@@ -26,7 +26,7 @@ is just detail on these steps.
 
 ```bash
 # 1. Clone and enter the project
-git clone <your-repo-url> wikipedia-rag && cd wikipedia-rag
+git clone https://github.com/ceydaakin/wikipedia-rag.git && cd wikipedia-rag
 
 # 2. One-shot setup: venv + Python deps + pulls both Ollama models
 bash scripts/setup.sh
