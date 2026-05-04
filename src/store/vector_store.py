@@ -6,13 +6,25 @@ across people and places can be handled by one search call.
 
 from __future__ import annotations
 
+import logging
+import os
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
-import chromadb
-from chromadb.config import Settings
+# Silence Chroma 0.4.24's anonymous-usage telemetry. The `Settings(...)` flag
+# below disables most calls, but a known bug in 0.4.24 still emits
+# "Failed to send telemetry event ..." log lines because the bundled posthog
+# call signature is incompatible with posthog>=3.0. Setting the env var before
+# importing chromadb prevents the calls; lowering the logger to CRITICAL
+# hides the leftover error log if any slip through. Telemetry is fire-and-
+# forget so this never affects stored data.
+os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
+logging.getLogger("chromadb.telemetry").setLevel(logging.CRITICAL)
 
-from config import CHROMA_COLLECTION, CHROMA_DIR
+import chromadb  # noqa: E402  (must come after the env var above)
+from chromadb.config import Settings  # noqa: E402
+
+from config import CHROMA_COLLECTION, CHROMA_DIR  # noqa: E402
 
 
 @dataclass(frozen=True)
