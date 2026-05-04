@@ -16,3 +16,6 @@ chroma_db/
 .vscode/
 *.swp
 .env
+
+# Local Claude Code agent harness state (not part of the project)
+.claude/
