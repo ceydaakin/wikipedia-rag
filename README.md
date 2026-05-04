@@ -113,8 +113,22 @@ python scripts/ingest.py --only "Albert Einstein"   # ingest a single entity
 streamlit run src/ui/streamlit_app.py
 ```
 
-Then open <http://localhost:8501>. The sidebar lets you change top-K, toggle
-context display, see indexing status, and clear chat history.
+Then open <http://localhost:8501>. The sidebar exposes:
+
+- **Model** — pick the active LLM, or flip on **Compare two models** to run
+  two local models side by side on the same retrieved context.
+- **Retrieval** — top-K slider, "Show retrieved context" toggle, "Use chat
+  history" toggle (threads the last 3 turns into the prompt so follow-ups
+  like *"compare them"* resolve correctly).
+- **Index status** — chunks indexed, people / places counts, with a
+  Ready / Empty indicator.
+- **Cache** — count of cached answers this session and a "Clear cache"
+  button. Repeating a question shows a yellow `⚡ cached` badge and
+  returns instantly.
+- **Session** — clear chat history.
+
+Each answer also shows a latency tag row: `retrieve …ms · generate …s ·
+🧠 model · 🧵 N prior turns`.
 
 ### CLI fallback
 
@@ -124,8 +138,26 @@ python -m src.ui.cli
 
 In-CLI commands:
 - `:context` — toggle showing retrieved chunks
-- `:reset` — start a fresh chat
+- `:history` — toggle threading prior turns into the prompt
+- `:cache` — show cache size; `:cache clear` to wipe it
+- `:model phi3` — switch the active LLM (must be `ollama pull`'ed first)
+- `:reset` — clear in-process chat history
 - `:quit` — exit
+
+Each answer is followed by a stats line, e.g.
+`(retrieve 412ms · generate 2.10s · model=llama3.2:3b · history=2)`.
+
+### Comparing two local models
+
+The Streamlit sidebar's "Compare two models" toggle lets you A/B two
+local LLMs against the same retrieved chunks. Pull the models first:
+
+```bash
+ollama pull phi3
+ollama pull mistral
+```
+
+Available choices live in `MODEL_OPTIONS` in `config.py`.
 
 ## Reset the system
 
@@ -242,8 +274,9 @@ say `I don't know.` when it can't find an answer there.
 python -m pytest tests/ -v
 ```
 
-Tests cover the cleaner, chunker, query classifier, and query expander
-without requiring Ollama or network access. **20 tests, all passing.**
+Tests cover the cleaner, chunker, query classifier, query expander,
+prompt history threading, and the LRU response cache without requiring
+Ollama or network access. **34 tests, all passing.**
 
 ### End-to-end smoke test
 
