@@ -208,6 +208,30 @@ Example queries the system handles:
 - *Who is the president of Mars?*
 - *Tell me about a random unknown person John Doe*
 
+## Vector store design — Option B (single store + metadata)
+
+The project uses **one Chroma collection** with every chunk tagged with
+`entity_type ∈ {person, place}` and `entity_title`, rather than two
+separate stores. Reasons:
+
+1. **Comparison queries** like *"Compare Einstein and the Eiffel Tower"*
+   or *"Which person is associated with electricity?"* need to search
+   across both types in a single call. Two stores would force a
+   client-side union and re-sort — exactly what a `where` filter on a
+   single store already does.
+2. **Filtering is essentially free** in Chroma — the HNSW traversal
+   applies the metadata predicate during search, so type-specific
+   queries get the same speed as Option A would.
+3. **One index, one rebuild path** — simpler ops.
+
+**Tradeoff accepted:** when the classifier returns `both` and the
+embedding is ambiguous, retrieval is slightly noisier than a strictly
+type-partitioned store. The comparison-aware retriever mitigates this
+by pulling per-entity batches when 2+ named entities are mentioned.
+
+Full rationale and the other 7 architectural decisions live in
+[`docs/design_choices.md`](docs/design_choices.md).
+
 ## How retrieval works
 
 1. **Expand** — the query is sent to the local LLM with a tight prompt that
