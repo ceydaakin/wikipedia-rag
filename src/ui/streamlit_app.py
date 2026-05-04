@@ -277,34 +277,50 @@ section[data-testid="stSidebar"] .stButton > button {
     padding-bottom: 24px !important;
 }
 [data-testid="stChatInput"] > div {
+    position: relative !important;
     border: 1px solid var(--border) !important;
     border-radius: 26px !important;
     background: var(--bg) !important;
     box-shadow: 0 2px 6px rgba(0,0,0,0.04) !important;
-    padding: 4px !important;
+    padding: 0 !important;
+    min-height: 52px !important;
+    display: flex !important;
+    align-items: center !important;
 }
 [data-testid="stChatInput"] textarea {
     border: none !important;
     background: transparent !important;
     font-size: 15px !important;
-    padding: 12px 14px !important;
+    padding: 14px 56px 14px 20px !important;  /* right pad reserves room for the send button */
     box-shadow: none !important;
-    border-radius: 22px !important;
+    border-radius: 26px !important;
+    line-height: 1.4 !important;
+    resize: none !important;
 }
 [data-testid="stChatInput"] textarea::placeholder { color: #B4B4C4 !important; }
 [data-testid="stChatInput"] button {
+    position: absolute !important;
+    right: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
     background: var(--ink) !important;
+    border: none !important;
     border-radius: 50% !important;
     width: 32px !important;
     height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     color: white !important;
 }
-[data-testid="stChatInput"] button:hover {
-    background: var(--ink-soft) !important;
-}
-[data-testid="stChatInput"] button:disabled {
-    background: var(--border) !important;
-}
+[data-testid="stChatInput"] button:hover { background: var(--ink-soft) !important; }
+[data-testid="stChatInput"] button:disabled { background: var(--border) !important; }
+[data-testid="stChatInput"] button svg { fill: white !important; width: 16px; height: 16px; }
+[data-testid="stChatInput"] button:disabled svg { fill: #9A9AA8 !important; }
 
 /* footer cleanup */
 footer { display: none; }
